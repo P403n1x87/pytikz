@@ -44,24 +44,27 @@ class cfg:
     The default is 300.
     """
 
-    latex = 'xelatex'
+    latex = "xelatex"
     """
     name of the executable used to compile the LaTeX document
     """
 
-    demo_template = '\n'.join([
-        '<div style="background-color:#e0e0e0;margin:0">',
-        '  <div>',
-        '    <div style="padding:10px;float:left">'
-        '      <img src="data:image/png;base64,{0}">',
-        '    </div>',
-        '    <pre',
-        '        style="width:47%;margin:0;padding:10px;float:right;'
-        + 'white-space:pre-wrap;font-size:smaller"',
-        '        >{1}</pre>',
-        '  </div>',
-        '  <div style="clear:both"></div>',
-        '</div>'])
+    demo_template = "\n".join(
+        [
+            '<div style="background-color:#e0e0e0;margin:0">',
+            "  <div>",
+            '    <div style="padding:10px;float:left">'
+            '      <img src="data:image/png;base64,{0}">',
+            "    </div>",
+            "    <pre",
+            '        style="width:47%;margin:0;padding:10px;float:right;'
+            + 'white-space:pre-wrap;font-size:smaller"',
+            "        >{1}</pre>",
+            "  </div>",
+            '  <div style="clear:both"></div>',
+            "</div>",
+        ]
+    )
     """
     HTML template used by `Picture.demo` for notebook display
 
@@ -81,12 +84,12 @@ def _option_code(key, val):
     helper function for `_options`
     """
     # replace underscores by spaces
-    key = str(key).replace('_', ' ')
+    key = str(key).replace("_", " ")
     if val is True:
         # omit `=True`
         return key
     else:
-        return f'{key}={str(val)}'
+        return f"{key}={str(val)}"
 
 
 def _options_code(opt=None, **kwoptions):
@@ -96,26 +99,41 @@ def _options_code(opt=None, **kwoptions):
     helper function to format `opt=None, **kwoptions` in various functions
     """
     # use `_option_code` to transform individual options
-    o = [_option_code(key, val) for key, val in kwoptions.items()
-         if val is not None]
+    o = [_option_code(key, val) for key, val in kwoptions.items() if val is not None]
     # insert raw string
     if opt is not None:
         o.insert(0, opt)
     # create TikZ code
-    code = '[' + ','.join(o) + ']'
+    code = "[" + ",".join(o) + "]"
     # suppress empty options
-    if code == '[]':
-        code = ''
+    if code == "[]":
+        code = ""
     return code
 
 
 # check types
-def _str(obj): return isinstance(obj, str)
-def _tuple(obj): return isinstance(obj, tuple)
-def _numeric(obj): return isinstance(obj, numbers.Real)
-def _str_or_numeric(obj): return _str(obj) or _numeric(obj)
-def _ndarray(obj): return isinstance(obj, np.ndarray)
-def _list(obj): return isinstance(obj, list)                                        # noqa E302
+def _str(obj):
+    return isinstance(obj, str)
+
+
+def _tuple(obj):
+    return isinstance(obj, tuple)
+
+
+def _numeric(obj):
+    return isinstance(obj, numbers.Real)
+
+
+def _str_or_numeric(obj):
+    return _str(obj) or _numeric(obj)
+
+
+def _ndarray(obj):
+    return isinstance(obj, np.ndarray)
+
+
+def _list(obj):
+    return isinstance(obj, list)  # noqa E302
 
 
 def _coordinate(coord):
@@ -125,26 +143,34 @@ def _coordinate(coord):
     # A coordinate can be a string with enclosing parentheses, possibly
     # prefixed by `+` or `++`, or the string 'cycle'.
     if _str(coord) and (
-            (coord.startswith(('(', '+(', '++(')) and coord.endswith(')'))
-            or coord == 'cycle'):
+        (coord.startswith(("(", "+(", "++(")) and coord.endswith(")"))
+        or coord == "cycle"
+    ):
         return coord
     # A coordinate can be a 2/3-element tuple containing strings or numbers:
-    if (_tuple(coord) and len(coord) in [2, 3]
-            and all(_str_or_numeric(x) for x in coord)):
+    if (
+        _tuple(coord)
+        and len(coord) in [2, 3]
+        and all(_str_or_numeric(x) for x in coord)
+    ):
         # If all strings, normalize to string.
         if all(_str(x) for x in coord):
-            return '(' + ','.join(coord) + ')'
+            return "(" + ",".join(coord) + ")"
         # If all numbers, normalize to ndarray.
         if all(_numeric(x) for x in coord):
             return np.array(coord)
         # If mixed, keep.
         return coord
     # A coordinate can be a 2/3-element 1d-ndarray.
-    if (_ndarray(coord) and coord.ndim == 1 and coord.size in [2, 3]
-            and all(_numeric(x) for x in coord)):
+    if (
+        _ndarray(coord)
+        and coord.ndim == 1
+        and coord.size in [2, 3]
+        and all(_numeric(x) for x in coord)
+    ):
         return coord
     # Otherwise, report error.
-    raise TypeError(f'{coord} is not a coordinate')
+    raise TypeError(f"{coord} is not a coordinate")
 
 
 def _sequence(seq, accept_coordinate=True):
@@ -158,19 +184,24 @@ def _sequence(seq, accept_coordinate=True):
         # Normalize contained coordinates.
         seq = [_coordinate(coord) for coord in seq]
         # If all coordinates are 1d-ndarrays, make the sequence a 2d-ndarray.
-        if (all(_ndarray(coord) for coord in seq)
-                and all(coord.size == seq[0].size for coord in seq)):
+        if all(_ndarray(coord) for coord in seq) and all(
+            coord.size == seq[0].size for coord in seq
+        ):
             return np.array(seq)
         return seq
     # A sequence can be a numeric 2d-ndarray with 2 or 3 columns.
-    if (_ndarray(seq) and seq.ndim == 2 and seq.shape[1] in [2, 3]
-            and all(_numeric(x) for x in seq.flat)):
+    if (
+        _ndarray(seq)
+        and seq.ndim == 2
+        and seq.shape[1] in [2, 3]
+        and all(_numeric(x) for x in seq.flat)
+    ):
         return seq
     # Optionally accept a coordinate and turn it into a 1-element sequence.
     if accept_coordinate:
         return _sequence([seq])
     # Otherwise, report error.
-    raise TypeError(f'{seq} is not a sequence of coordinates')
+    raise TypeError(f"{seq} is not a sequence of coordinates")
 
 
 def _str_or_numeric_code(x):
@@ -187,7 +218,7 @@ def _str_or_numeric_code(x):
     else:
         # convert numeric elements to a fixed-point representation with 5
         # decimals precision (TikZ: ±16383.99999) without trailing '0's or '.'
-        return '{:.5f}'.format(x).rstrip('0').rstrip('.')
+        return "{:.5f}".format(x).rstrip("0").rstrip(".")
 
 
 def _coordinate_code(coord, trans=None):
@@ -199,7 +230,7 @@ def _coordinate_code(coord, trans=None):
     else:
         if trans is not None:
             coord = trans(coord)
-        return '(' + ','.join(map(_str_or_numeric_code, coord)) + ')'
+        return "(" + ",".join(map(_str_or_numeric_code, coord)) + ")"
 
 
 # coordinates
@@ -207,10 +238,11 @@ def _coordinate_code(coord, trans=None):
 
 def cycle():
     "cycle coordinate"
-    return 'cycle'
+    return "cycle"
 
 
 # raw object
+
 
 class Raw:
     """
@@ -223,6 +255,7 @@ class Raw:
     because the respective methods accept strings and convert them into `Raw`
     objects internally.
     """
+
     def __init__(self, string):
         self.string = string
 
@@ -250,6 +283,7 @@ class Operation:
 
     This is an abstract superclass that is not to be instantiated.
     """
+
     def _code(self):
         "returns TikZ code"
         pass
@@ -263,6 +297,7 @@ class moveto(Operation):
 
     See [§14.1](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.1)
     """
+
     def __init__(self, coords):
         # normalize coordinates
         self.coords = _sequence(coords, accept_coordinate=True)
@@ -270,8 +305,7 @@ class moveto(Operation):
     def _code(self, trans=None):
         # put move-to operation before each coordinate,
         # for the first one implicitly
-        return ' '.join(_coordinate_code(coord, trans)
-                        for coord in self.coords)
+        return " ".join(_coordinate_code(coord, trans) for coord in self.coords)
 
 
 class lineto(Operation):
@@ -285,15 +319,17 @@ class lineto(Operation):
 
     see [§14.2](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.2)
     """
-    def __init__(self, coords, op='--'):
+
+    def __init__(self, coords, op="--"):
         # normalize coordinates
         self.coords = _sequence(coords, accept_coordinate=True)
         self.op = op
 
     def _code(self, trans=None):
         # put line-to operation before each coordinate
-        return f'{self.op} ' + f' {self.op} '.join(
-            _coordinate_code(coord, trans) for coord in self.coords)
+        return f"{self.op} " + f" {self.op} ".join(
+            _coordinate_code(coord, trans) for coord in self.coords
+        )
 
 
 class line(Operation):
@@ -302,7 +338,8 @@ class line(Operation):
 
     Starts with move-to instead of line-to operation.
     """
-    def __init__(self, coords, op='--'):
+
+    def __init__(self, coords, op="--"):
         # normalize coordinates
         self.coords = _sequence(coords)
         self.op = op
@@ -310,8 +347,9 @@ class line(Operation):
     def _code(self, trans=None):
         # put line-to operation between coordinates
         # (implicit move-to before first)
-        return f' {self.op} '.join(
-            _coordinate_code(coord, trans) for coord in self.coords)
+        return f" {self.op} ".join(
+            _coordinate_code(coord, trans) for coord in self.coords
+        )
 
 
 class curveto(Operation):
@@ -322,6 +360,7 @@ class curveto(Operation):
 
     see [§14.3](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.3)
     """
+
     def __init__(self, coord, control1, control2=None):
         # normalize coordinates
         self.coord = _coordinate(coord)
@@ -332,10 +371,10 @@ class curveto(Operation):
             self.control2 = None
 
     def _code(self, trans=None):
-        code = '.. controls ' + _coordinate_code(self.control1, trans)
+        code = ".. controls " + _coordinate_code(self.control1, trans)
         if self.control2 is not None:
-            code += ' and ' + _coordinate_code(self.control2, trans)
-        code += ' ..' + ' ' + _coordinate_code(self.coord, trans)
+            code += " and " + _coordinate_code(self.control2, trans)
+        code += " .." + " " + _coordinate_code(self.coord, trans)
         return code
 
 
@@ -347,12 +386,13 @@ class rectangle(Operation):
 
     see [§14.4](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.4)
     """
+
     def __init__(self, coord):
         # normalize coordinate
         self.coord = _coordinate(coord)
 
     def _code(self, trans=None):
-        return ('rectangle ' + _coordinate_code(self.coord, trans))
+        return "rectangle " + _coordinate_code(self.coord, trans)
 
 
 class circle(Operation):
@@ -368,8 +408,10 @@ class circle(Operation):
 
     see [§14.6](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.6)
     """
-    def __init__(self, radius=None, x_radius=None, y_radius=None, at=None,
-                 opt=None, **kwoptions):
+
+    def __init__(
+        self, radius=None, x_radius=None, y_radius=None, at=None, opt=None, **kwoptions
+    ):
         # overriding logic
         # Information is stored as separate radii to enable scaling.
         if radius is not None:
@@ -392,13 +434,13 @@ class circle(Operation):
         if trans is not None:
             x_radius, y_radius = trans(x_radius, y_radius)
         if x_radius == y_radius:
-            kwoptions['radius'] = x_radius
+            kwoptions["radius"] = x_radius
         else:
-            kwoptions['x_radius'] = x_radius
-            kwoptions['y_radius'] = y_radius
+            kwoptions["x_radius"] = x_radius
+            kwoptions["y_radius"] = y_radius
         if self.at is not None:
-            kwoptions['at'] = _coordinate_code(self.at, None)
-        return 'circle' + _options_code(opt=self.opt, **self.kwoptions)
+            kwoptions["at"] = _coordinate_code(self.at, None)
+        return "circle" + _options_code(opt=self.opt, **self.kwoptions)
 
 
 class arc(Operation):
@@ -411,8 +453,10 @@ class arc(Operation):
 
     see [§14.7](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.7)
     """
-    def __init__(self, radius=None, x_radius=None, y_radius=None,
-                 opt=None, **kwoptions):
+
+    def __init__(
+        self, radius=None, x_radius=None, y_radius=None, opt=None, **kwoptions
+    ):
         # overriding logic
         # Information is stored as separate radii to enable scaling.
         if radius is not None:
@@ -430,11 +474,11 @@ class arc(Operation):
         if trans is not None:
             x_radius, y_radius = trans(x_radius, y_radius)
         if x_radius == y_radius:
-            kwoptions['radius'] = x_radius
+            kwoptions["radius"] = x_radius
         else:
-            kwoptions['x_radius'] = x_radius
-            kwoptions['y_radius'] = y_radius
-        return 'arc' + _options_code(opt=self.opt, **kwoptions)
+            kwoptions["x_radius"] = x_radius
+            kwoptions["y_radius"] = y_radius
+        return "arc" + _options_code(opt=self.opt, **kwoptions)
 
 
 class grid(Operation):
@@ -448,8 +492,8 @@ class grid(Operation):
 
     see [§14.8](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.8)
     """
-    def __init__(self, coord, step=None, xstep=None, ystep=None,
-                 opt=None, **kwoptions):
+
+    def __init__(self, coord, step=None, xstep=None, ystep=None, opt=None, **kwoptions):
         # normalize coordinate
         self.coord = _coordinate(coord)
         # overriding logic
@@ -469,12 +513,16 @@ class grid(Operation):
         if trans is not None:
             xstep, ystep = trans(xstep, ystep)
         if xstep == ystep:
-            kwoptions['step'] = xstep
+            kwoptions["step"] = xstep
         else:
-            kwoptions['xstep'] = xstep
-            kwoptions['ystep'] = ystep
-        return ('grid' + _options_code(opt=self.opt, **kwoptions)
-                + ' ' + _coordinate_code(self.coord, trans))
+            kwoptions["xstep"] = xstep
+            kwoptions["ystep"] = ystep
+        return (
+            "grid"
+            + _options_code(opt=self.opt, **kwoptions)
+            + " "
+            + _coordinate_code(self.coord, trans)
+        )
 
 
 class parabola(Operation):
@@ -485,6 +533,7 @@ class parabola(Operation):
 
     see [§14.9](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.9)
     """
+
     def __init__(self, coord, bend=None, opt=None, **kwoptions):
         # normalize coordinates
         self.coord = _coordinate(coord)
@@ -496,10 +545,10 @@ class parabola(Operation):
         self.kwoptions = kwoptions
 
     def _code(self, trans=None):
-        code = 'parabola' + _options_code(opt=self.opt, **self.kwoptions)
+        code = "parabola" + _options_code(opt=self.opt, **self.kwoptions)
         if self.bend is not None:
-            code += ' bend ' + _coordinate_code(self.bend, trans)
-        code += ' ' + _coordinate_code(self.coord, trans)
+            code += " bend " + _coordinate_code(self.bend, trans)
+        code += " " + _coordinate_code(self.coord, trans)
         return code
 
 
@@ -511,6 +560,7 @@ class sin(Operation):
 
     see [§14.10](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.10)
     """
+
     def __init__(self, coord, opt=None, **kwoptions):
         # normalize coordinate
         self.coord = _coordinate(coord)
@@ -518,8 +568,12 @@ class sin(Operation):
         self.kwoptions = kwoptions
 
     def _code(self, trans=None):
-        return ('sin' + _options_code(opt=self.opt, **self.kwoptions)
-                + ' ' + _coordinate_code(self.coord, trans))
+        return (
+            "sin"
+            + _options_code(opt=self.opt, **self.kwoptions)
+            + " "
+            + _coordinate_code(self.coord, trans)
+        )
 
 
 class cos(Operation):
@@ -530,6 +584,7 @@ class cos(Operation):
 
     see [§14.10](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.10)
     """
+
     def __init__(self, coord, opt=None, **kwoptions):
         # normalize coordinate
         self.coord = _coordinate(coord)
@@ -537,8 +592,12 @@ class cos(Operation):
         self.kwoptions = kwoptions
 
     def _code(self, trans=None):
-        return ('cos' + _options_code(opt=self.opt, **self.kwoptions)
-                + ' ' + _coordinate_code(self.coord, trans))
+        return (
+            "cos"
+            + _options_code(opt=self.opt, **self.kwoptions)
+            + " "
+            + _coordinate_code(self.coord, trans)
+        )
 
 
 class topath(Operation):
@@ -549,6 +608,7 @@ class topath(Operation):
 
     see [§14.13](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.14.13)
     """
+
     def __init__(self, coord, opt=None, **kwoptions):
         # normalize coordinate
         self.coord = _coordinate(coord)
@@ -556,8 +616,12 @@ class topath(Operation):
         self.kwoptions = kwoptions
 
     def _code(self, trans=None):
-        return ('to' + _options_code(opt=self.opt, **self.kwoptions)
-                + ' ' + _coordinate_code(self.coord, trans))
+        return (
+            "to"
+            + _options_code(opt=self.opt, **self.kwoptions)
+            + " "
+            + _coordinate_code(self.coord, trans)
+        )
 
 
 class node(Operation):
@@ -579,9 +643,11 @@ class node(Operation):
 
     see [§17](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#section.17)
     """
+
     # Provides 'headless' mode for `Scope.node` and `Scope.coordinate`
-    def __init__(self, contents, name=None, at=None, _headless=False,
-                 opt=None, **kwoptions):
+    def __init__(
+        self, contents, name=None, at=None, _headless=False, opt=None, **kwoptions
+    ):
         self.name = name
         self.contents = contents
         # normalize coordinate
@@ -595,15 +661,15 @@ class node(Operation):
 
     def _code(self, trans=None):
         if not self.headless:
-            code = 'node'
+            code = "node"
         else:
-            code = ''
+            code = ""
         code += _options_code(opt=self.opt, **self.kwoptions)
         if self.name is not None:
-            code += f' ({self.name})'
+            code += f" ({self.name})"
         if self.at is not None:
-            code += ' at ' + _coordinate_code(self.at, trans)
-        code += ' {' + self.contents + '}'
+            code += " at " + _coordinate_code(self.at, trans)
+        code += " {" + self.contents + "}"
         if self.headless:
             code = code.lstrip()
         return code
@@ -626,6 +692,7 @@ class coordinate(Operation):
     see
     [§17.2.1](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsubsection.17.2.1)
     """
+
     def __init__(self, name, at=None, _headless=False, opt=None, **kwoptions):
         self.name = name
         # normalize coordinate
@@ -639,13 +706,13 @@ class coordinate(Operation):
 
     def _code(self, trans=None):
         if not self.headless:
-            code = 'coordinate'
+            code = "coordinate"
         else:
-            code = ''
+            code = ""
         code += _options_code(opt=self.opt, **self.kwoptions)
-        code += f' ({self.name})'
+        code += f" ({self.name})"
         if self.at is not None:
-            code += ' at ' + _coordinate_code(self.at, trans)
+            code += " at " + _coordinate_code(self.at, trans)
         if self.headless:
             code = code.lstrip()
         return code
@@ -667,6 +734,7 @@ class plot(Operation):
 
     see [§22](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#section.22)
     """
+
     def __init__(self, coords, to=False, opt=None, **kwoptions):
         # normalize coordinates
         self.coords = _sequence(coords, accept_coordinate=True)
@@ -678,12 +746,15 @@ class plot(Operation):
         # TODO: Use the 'file' variant as an alternative to 'coordinates' when
         #   there are many points.
         if self.to:
-            code = '--plot'
+            code = "--plot"
         else:
-            code = 'plot'
+            code = "plot"
         code += _options_code(opt=self.opt, **self.kwoptions)
-        code += ' coordinates {' + ' '.join(
-            _coordinate_code(coord, trans) for coord in self.coords) + '}'
+        code += (
+            " coordinates {"
+            + " ".join(_coordinate_code(coord, trans) for coord in self.coords)
+            + "}"
+        )
         return code
 
 
@@ -708,10 +779,11 @@ def fontsize(size, skip=None):
     if skip is None:
         # 20% leading
         skip = round(1.2 * size, 2)
-    return f'\\fontsize{{{size}}}{{{skip}}}\\selectfont'
+    return f"\\fontsize{{{size}}}{{{skip}}}\\selectfont"
 
 
 # actions on paths
+
 
 def _operation(op):
     """
@@ -743,6 +815,7 @@ class Action:
 
     see [§15](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#section.15)
     """
+
     def __init__(self, action_name, *spec, opt=None, **kwoptions):
         self.action_name = action_name
         # normalize path specification
@@ -752,9 +825,14 @@ class Action:
 
     def _code(self, trans=None):
         "returns TikZ code"
-        return ('\\' + self.action_name
-                + _options_code(opt=self.opt, **self.kwoptions)
-                + ' ' + ' '.join(op._code(trans) for op in self.spec) + ';')
+        return (
+            "\\"
+            + self.action_name
+            + _options_code(opt=self.opt, **self.kwoptions)
+            + " "
+            + " ".join(op._code(trans) for op in self.spec)
+            + ";"
+        )
 
 
 # environments
@@ -801,9 +879,9 @@ class Scope:
 
     def _code(self, trans=None):
         "returns TikZ code"
-        code = r'\begin{scope}' + self.opt + '\n'
-        code += '\n'.join(el._code(trans) for el in self.elements) + '\n'
-        code += r'\end{scope}'
+        code = r"\begin{scope}" + self.opt + "\n"
+        code += "\n".join(el._code(trans) for el in self.elements) + "\n"
+        code += r"\end{scope}"
         return code
 
     # add actions on paths (§15)
@@ -822,7 +900,7 @@ class Scope:
 
         see [§14](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#section.14)
         """
-        self._append(Action('path', *spec, opt=opt, **kwoptions))
+        self._append(Action("path", *spec, opt=opt, **kwoptions))
 
     def draw(self, *spec, opt=None, **kwoptions):
         """
@@ -833,7 +911,7 @@ class Scope:
         see
         [§15.3](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.15.3)
         """
-        self._append(Action('draw', *spec, opt=opt, **kwoptions))
+        self._append(Action("draw", *spec, opt=opt, **kwoptions))
 
     def fill(self, *spec, opt=None, **kwoptions):
         """
@@ -844,7 +922,7 @@ class Scope:
         see
         [§15.5](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.15.5)
         """
-        self._append(Action('fill', *spec, opt=opt, **kwoptions))
+        self._append(Action("fill", *spec, opt=opt, **kwoptions))
 
     def filldraw(self, *spec, opt=None, **kwoptions):
         """
@@ -853,7 +931,7 @@ class Scope:
         Abbreviation for
         [<code>path(…, fill=True, draw=True)</code>](#tikz.Scope.path).
         """
-        self._append(Action('filldraw', *spec, opt=opt, **kwoptions))
+        self._append(Action("filldraw", *spec, opt=opt, **kwoptions))
 
     def pattern(self, *spec, opt=None, **kwoptions):
         """
@@ -865,7 +943,7 @@ class Scope:
         see
         [§15.5.1](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsubsection.15.5.1)
         """
-        self._append(Action('pattern', *spec, opt=opt, **kwoptions))
+        self._append(Action("pattern", *spec, opt=opt, **kwoptions))
 
     def shade(self, *spec, opt=None, **kwoptions):
         """
@@ -876,7 +954,7 @@ class Scope:
         see
         [§15.7](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.15.7)
         """
-        self._append(Action('shade', *spec, opt=opt, **kwoptions))
+        self._append(Action("shade", *spec, opt=opt, **kwoptions))
 
     def shadedraw(self, *spec, opt=None, **kwoptions):
         """
@@ -885,7 +963,7 @@ class Scope:
         Abbreviation for
         [<code>path(…, shade=True, draw=True)</code>](#tikz.Scope.path).
         """
-        self._append(Action('shadedraw', *spec, opt=opt, **kwoptions))
+        self._append(Action("shadedraw", *spec, opt=opt, **kwoptions))
 
     def clip(self, *spec, opt=None, **kwoptions):
         """
@@ -896,7 +974,7 @@ class Scope:
         see
         [§15.9](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.15.9)
         """
-        self._append(Action('clip', *spec, opt=opt, **kwoptions))
+        self._append(Action("clip", *spec, opt=opt, **kwoptions))
 
     def useasboundingbox(self, *spec, opt=None, **kwoptions):
         """
@@ -908,7 +986,7 @@ class Scope:
         see
         [§15.8](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsection.15.8)
         """
-        self._append(Action('useasboundingbox', *spec, opt=opt, **kwoptions))
+        self._append(Action("useasboundingbox", *spec, opt=opt, **kwoptions))
 
     def node(self, contents, name=None, at=None, opt=None, **kwoptions):
         """
@@ -919,10 +997,15 @@ class Scope:
 
         see
         [§17.2.1](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsubsection.17.2.1)
-       """
-        self._append(Action(
-            'node', node(contents, name=name, at=at, _headless=True),
-            opt=opt, **kwoptions))
+        """
+        self._append(
+            Action(
+                "node",
+                node(contents, name=name, at=at, _headless=True),
+                opt=opt,
+                **kwoptions,
+            )
+        )
 
     def coordinate(self, name, at=None, opt=None, **kwoptions):
         """
@@ -933,11 +1016,16 @@ class Scope:
 
         see
         [§17.2.1](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#subsubsection.17.2.1)
-       """
+        """
         "coordinate action"
-        self._append(Action(
-            'coordinate', coordinate(name=name, at=at, _headless=True),
-            opt=opt, **kwoptions))
+        self._append(
+            Action(
+                "coordinate",
+                coordinate(name=name, at=at, _headless=True),
+                opt=opt,
+                **kwoptions,
+            )
+        )
 
     # other commands
 
@@ -953,9 +1041,19 @@ class Scope:
         §2.5.2](https://mirrors.nxthost.com/ctan/macros/latex/contrib/xcolor/xcolor.pdf#subsubsection.2.5.2)
         """
         if not isinstance(colorspec, str):
-            colorspec = ','.join(colorspec)
-        self._append(Raw(r'\definecolor' + '{' + name + '}{'
-                     + colormodel + '}{' + colorspec + '}'))
+            colorspec = ",".join(colorspec)
+        self._append(
+            Raw(
+                r"\definecolor"
+                + "{"
+                + name
+                + "}{"
+                + colormodel
+                + "}{"
+                + colorspec
+                + "}"
+            )
+        )
 
     def colorlet(self, name, colorexpr):
         """
@@ -968,7 +1066,7 @@ class Scope:
         [<code>xcolor</code>
         §2.5.2](https://mirrors.nxthost.com/ctan/macros/latex/contrib/xcolor/xcolor.pdf#subsubsection.2.5.2)
         """
-        self._append(Raw(r'\colorlet' + '{' + name + '}{' + colorexpr + '}'))
+        self._append(Raw(r"\colorlet" + "{" + name + "}{" + colorexpr + "}"))
 
     def tikzset(self, opt=None, **kwoptions):
         """
@@ -979,10 +1077,10 @@ class Scope:
         """
         # create options string without brackets
         opt = _options_code(opt=opt, **kwoptions)
-        if opt.startswith('[') and opt.endswith(']'):
+        if opt.startswith("[") and opt.endswith("]"):
             opt = opt[1:-1]
         # because braces are needed
-        self._append(Raw(r'\tikzset{' + opt + '}'))
+        self._append(Raw(r"\tikzset{" + opt + "}"))
 
     def style(self, name, opt=None, **kwoptions):
         """
@@ -998,10 +1096,10 @@ class Scope:
         """
         # create options string without brackets
         opt = _options_code(opt=opt, **kwoptions)
-        if opt.startswith('[') and opt.endswith(']'):
+        if opt.startswith("[") and opt.endswith("]"):
             opt = opt[1:-1]
         # because braces are needed
-        self._append(Raw(r'\tikzset{' + name + '/.style={' + opt + '}}'))
+        self._append(Raw(r"\tikzset{" + name + "/.style={" + opt + "}}"))
 
 
 class Picture(Scope):
@@ -1028,7 +1126,7 @@ class Picture(Scope):
         self.cache = cache
         # create temporary directory for pdflatex etc.
         if tempdir is None:
-            self.tempdir = tempfile.mkdtemp(prefix='tikz-')
+            self.tempdir = tempfile.mkdtemp(prefix="tikz-")
             # make sure it gets deleted
             atexit.register(shutil.rmtree, self.tempdir, ignore_errors=True)
         else:
@@ -1061,7 +1159,7 @@ class Picture(Scope):
         see
         [Part V](https://pgf-tikz.github.io/pgf/pgfmanual.pdf#part.5)
         """
-        self.add_preamble(r'\usetikzlibrary{' + name + '}')
+        self.add_preamble(r"\usetikzlibrary{" + name + "}")
 
     def usepackage(self, name, options=None):
         """
@@ -1074,10 +1172,10 @@ class Picture(Scope):
         document. If the method is called multiple times with the same
         arguments, only one such command is added.
         """
-        code = r'\usepackage'
+        code = r"\usepackage"
         if options is not None:
-            code += '[' + options + ']'
-        code += '{' + name + '}'
+            code += "[" + options + "]"
+        code += "{" + name + "}"
         self.add_preamble(code)
 
     def fira(self):
@@ -1086,40 +1184,45 @@ class Picture(Scope):
 
         Warning: Fira Math works only with xelatex and lualatex!
         """
-        self.usepackage('FiraSans', 'sfdefault')
-        self.usepackage('unicode-math', 'mathrm=sym')
-        self.add_preamble(r'\setmathfont{Fira Math}[math-style=ISO,'
-                          'bold-style=ISO,nabla=upright,partial=upright]')
+        self.usepackage("FiraSans", "sfdefault")
+        self.usepackage("unicode-math", "mathrm=sym")
+        self.add_preamble(
+            r"\setmathfont{Fira Math}[math-style=ISO,"
+            "bold-style=ISO,nabla=upright,partial=upright]"
+        )
 
     # code / pdf creation: private
     # private functions assume that code / pdf has already been created
 
-    def _update(self):
+    def _update(self, process=False):
         "ensure that up-to-date code & PDF file exists"
 
         sep = os.path.sep
 
         # create tikzpicture code
-        code = (r'\begin{tikzpicture}' + self.opt + '\n'
-                + '\n'.join(el._code() for el in self.elements) + '\n'
-                + r'\end{tikzpicture}')
+        code = (
+            r"\begin{tikzpicture}"
+            + self.opt
+            + "\n"
+            + "\n".join(el._code() for el in self.elements)
+            + "\n"
+            + r"\end{tikzpicture}"
+        )
         self._code = code
 
         # create document code
         # standard preamble
         codelines = [
-            r'\documentclass{article}',
-            r'\usepackage{tikz}',
-            r'\usetikzlibrary{external}',
-            r'\tikzexternalize']
+            r"\documentclass{article}",
+            r"\usepackage{tikz}",
+            r"\usetikzlibrary{external}",
+            r"\tikzexternalize",
+        ]
         # user-added preamble
         codelines += self.preamble
         # document body
-        codelines += [
-            r'\begin{document}',
-            self._code,
-            r'\end{document}']
-        code = '\n'.join(codelines)
+        codelines += [r"\begin{document}", self._code, r"\end{document}"]
+        code = "\n".join(codelines)
         self._document_code = code
 
         # We don't want a PDF file of the whole LaTeX document, but only of the
@@ -1133,30 +1236,34 @@ class Picture(Scope):
         #  This check is implemented by using the SHA1 digest of the LaTeX code
         # in the PDF filename, and to skip creation if that file exists.
         hash = hashlib.sha1(code.encode()).hexdigest()
-        self.temp_pdf = self.tempdir + sep + 'tikz-' + hash + '.pdf'
+        self.temp_pdf = self.tempdir + sep + "tikz-" + hash + ".pdf"
         if self.cache and os.path.isfile(self.temp_pdf):
             return
 
         # create LaTeX file
-        temp_tex = self.tempdir + sep + 'tikz.tex'
-        with open(temp_tex, 'w') as f:
-            f.write(code + '\n')
+        temp_tex = self.tempdir + sep + "tikz.tex"
+        with open(temp_tex, "w") as f:
+            f.write(code + "\n")
 
-        # process LaTeX file into PDF
-        completed = subprocess.run(
-            [cfg.latex,
-             '-jobname',
-             'tikz-figure0',
-             r'\def\tikzexternalrealjob{tikz}\input{tikz}'],
-            cwd=self.tempdir,
-            capture_output=True,
-            text=True)
-        self.latex_completed = completed
-        if completed.returncode != 0:
-            raise LatexError('LaTeX has failed\n' + completed.stdout)
+        if process:
+            # process LaTeX file into PDF
+            completed = subprocess.run(
+                [
+                    cfg.latex,
+                    "-jobname",
+                    "tikz-figure0",
+                    r"\def\tikzexternalrealjob{tikz}\input{tikz}",
+                ],
+                cwd=self.tempdir,
+                capture_output=True,
+                text=True,
+            )
+            self.latex_completed = completed
+            if completed.returncode != 0:
+                raise LatexError("LaTeX has failed\n" + completed.stdout)
 
-        # rename created PDF file
-        os.rename(self.tempdir + sep + 'tikz-figure0.pdf', self.temp_pdf)
+            # rename created PDF file
+            os.rename(self.tempdir + sep + "tikz-figure0.pdf", self.temp_pdf)
 
     def _get_SVG(self):
         "return SVG data of `Picture`"
@@ -1179,12 +1286,13 @@ class Picture(Scope):
 
     # code / pdf creation: public
     # public functions make sure that code / pdf is created via `_update`
-
+    @property
     def code(self):
         "returns TikZ code"
         self._update()
         return self._code
 
+    @property
     def document_code(self):
         "returns LaTeX/TikZ code for a complete compilable document"
         self._update()
@@ -1206,27 +1314,27 @@ class Picture(Scope):
         """
         if dpi is None:
             dpi = cfg.file_dpi
-        self._update()
+        self._update(process=True)
         # determine extension
         _, ext = os.path.splitext(filename)
         # if a PDF is requested,
-        if ext.lower() == '.pdf':
+        if ext.lower() == ".pdf":
             # just copy the file
             shutil.copyfile(self.temp_pdf, filename)
-        elif ext.lower() == '.png':
+        elif ext.lower() == ".png":
             # render PDF as PNG using PyMuPDF
             zoom = dpi / 72
             doc = fitz.open(self.temp_pdf)
             page = doc.load_page(0)
             pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=True)
             pix.save(filename)
-        elif ext.lower() == '.svg':
+        elif ext.lower() == ".svg":
             # convert PDF to SVG using PyMuPDF
             svg = self._get_SVG()
-            with open(filename, 'w') as f:
+            with open(filename, "w") as f:
                 f.write(svg)
         else:
-            raise ValueError(f'format {ext[1:]} is not supported')
+            raise ValueError(f"format {ext[1:]} is not supported")
 
     def _repr_mimebundle_(self, include, exclude, **kwargs):
         "display image in notebook"
@@ -1234,11 +1342,8 @@ class Picture(Scope):
         # is necessary to provide both a PNG and an SVG.
         # Note that SVG rendering in the "plot viewer" is not entirely
         # accurate, see https://github.com/microsoft/vscode-python/issues/13080
-        self._update()
-        data = {
-            'image/png': self._get_PNG(),
-            'image/svg+xml': self._get_SVG()
-        }
+        self._update(process=True)
+        data = {"image/png": self._get_PNG(), "image/svg+xml": self._get_SVG()}
         return data
 
     def demo(self, dpi=None):
@@ -1252,26 +1357,26 @@ class Picture(Scope):
         `cfg.demo_template`. The optional argument `dpi` can be used to
         override the default `cfg.display_dpi`.
         """
-        self._update()
-        png_base64 = ''
+        self._update(process=True)
+        png_base64 = ""
         try:
-            png_base64 = base64.b64encode(
-                self._get_PNG(dpi=dpi)).decode('ascii')
+            png_base64 = base64.b64encode(self._get_PNG(dpi=dpi)).decode("ascii")
         except LatexError as le:
             message = le.args[0]
-            tikz_error = message.find('! ')
+            tikz_error = message.find("! ")
             if tikz_error != -1:
                 message = message[tikz_error:]
-            print('LatexError: LaTeX has failed')
+            print("LatexError: LaTeX has failed")
             print(message)
         code_escaped = html.escape(self._code)
         IPython.display.display(
-            IPython.display.HTML(
-                cfg.demo_template.format(png_base64, code_escaped)))
+            IPython.display.HTML(cfg.demo_template.format(png_base64, code_escaped))
+        )
 
 
 class LatexError(Exception):
     """
     error in the external LaTeX process
     """
+
     pass
